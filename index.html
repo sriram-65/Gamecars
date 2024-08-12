@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  
+
+    <div id="score">Score: 0</div>
 
     <div id="gameArea">
         <div id="car"></div>
@@ -23,6 +24,7 @@
     <div id="gameOver">
         <h1>Game Over</h1>
         <h2>Made By Unreal engine</h2>
+        <h4>Your Score :<span id="get"></span></h4>
         <button id="restartBtn">Restart</button>
     </div>
 
@@ -30,7 +32,7 @@
 </body>
 </html>
 <style>
-  #gameOver {
+#gameOver {
     display: none;
     position: fixed;
     top: 0;
@@ -68,11 +70,11 @@
 }
 
 #leftBtn, #rightBtn {
-    width: 100px;
-    height: 100px;
+    width: 50px;
+    height: 60px;
     font-size: 2em;
     margin: 0 10px;
-    background-color: #555;
+    background-color: white;
     color: white;
     border: none;
     border-radius: 10px;
@@ -113,7 +115,15 @@ body {
     transform: translateX(-50%);
     border-radius: 10px;
 }
-
+#score{
+  color:white;
+  padding: 20px 20px;
+  font-size:30px;
+}
+#get{
+  color: gold;
+  font-size: 20px;
+}
 </style>
 <script>
   const gameArea = document.getElementById('gameArea');
@@ -122,8 +132,11 @@ const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
 const gameOver = document.getElementById('gameOver');
 const restartBtn = document.getElementById('restartBtn');
+const scoreDisplay = document.getElementById('score');
 let carPosition = 50; // Initial position of the car (50% from the left)
 let gameRunning = true; // Track the game state
+let score = 0; // Initial score
+let getvalue = document.getElementById("get")
 
 // Keyboard controls
 document.addEventListener('keydown', (e) => {
@@ -146,22 +159,32 @@ rightBtn.addEventListener('touchstart', () => {
 });
 
 function moveCar(direction) {
+    if (!gameRunning) return;
+
     switch (direction) {
         case 'ArrowLeft':
         case 'a':
             if (carPosition > 0) {
-                carPosition -= 5;
+                carPosition -= 10;
             }
             break;
         case 'ArrowRight':
         case 'd':
             if (carPosition < 100) {
-                carPosition += 5;
+                carPosition += 10;
             }
             break;
     }
     car.style.left = carPosition + '%';
 }
+
+// Update score every second
+let scoreInterval = setInterval(() => {
+    if (gameRunning) {
+        score++;
+        scoreDisplay.innerText = `Score: ${score}`;
+    }
+}, 1000);
 
 // Obstacle creation and movement
 function createObstacle() {
@@ -173,34 +196,49 @@ function createObstacle() {
     obstacle.style.top = '0';
     gameArea.appendChild(obstacle);
 
-    let moveInterval = setInterval(() => {
+    // Use requestAnimationFrame for smoother animation and less lag
+    function moveObstacle() {
+        if (!gameRunning) return;
+
         let currentTop = parseInt(obstacle.style.top);
+        currentTop += 2; // Increase speed for smoother movement
+
         if (currentTop > 100) {
-            clearInterval(moveInterval);
             obstacle.remove();
         } else {
-            obstacle.style.top = currentTop + 1 + '%';
-        }
+            obstacle.style.top = currentTop + '%';
 
-        // Collision detection
-        if (currentTop > 85 && currentTop < 100 && Math.abs(carPosition - parseInt(obstacle.style.left)) < 5) {
-            clearInterval(moveInterval);
-            endGame();
+            // Collision detection
+            if (currentTop > 85 && currentTop < 95 && Math.abs(carPosition - parseInt(obstacle.style.left)) < 5) {
+                endGame();
+            } else {
+                requestAnimationFrame(moveObstacle); // Recursive call for the next frame
+            }
         }
-    }, 20);
+    }
+
+    moveObstacle();
 }
 
 // Spawn obstacles every 2 seconds
-let obstacleInterval = setInterval(createObstacle, 2000);
+let obstacleInterval = setInterval(() => {
+    if (gameRunning) {
+        createObstacle();
+    }
+}, 320);
 
 function endGame() {
     gameRunning = false;
     gameOver.style.display = 'block';
+    getvalue.innerHTML = score
     clearInterval(obstacleInterval);
+    clearInterval(scoreInterval); // Stop score increment
+    // Remove all remaining obstacles
+    document.querySelectorAll('.obstacle').forEach(obstacle => obstacle.remove());
 }
 
 // Restart the game
 restartBtn.addEventListener('click', () => {
     window.location.reload();
 });
-</script>
+    </script>
